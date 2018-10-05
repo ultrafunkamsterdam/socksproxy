@@ -37,11 +37,6 @@ def get_args():
                       type=int,
                       default=1080,
                       help='port to listen on')
-    args.add_argument('-type', '--socks-type',
-                      dest='sockstype',
-                      type=str,
-                      default='auto',
-                      help='force proxy to be either type 4,5 or auto [default]')
     return args.parse_args()
 
 

@@ -5,4 +5,5 @@ def main():
     run_proxy()
 
 
-exit(main() or -1)
+if __name__ == '__main__':
+    exit(main() or -1)
