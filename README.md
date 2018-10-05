@@ -1,4 +1,4 @@
-# python-socksproxy :+1:
+# socksproxy :+1:
 
 
 A flexible asynchronous socks4 / socks5 proxy written in pure python
