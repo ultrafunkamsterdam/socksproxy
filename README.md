@@ -10,18 +10,18 @@ This proxy module can be used as a full blown proxy or the classes can be used t
 
 **default settings**
 ```python
-import proxy
+import socksproxy
 
-socks5proxy = proxy.Socks5()
+socks5proxy = socksproxy.Socks5()
 socks5proxy.start()
 ```
 
 
 **set specific listen host, port, and not block while serving**
 ```python
-import proxy
+import socksproxy
 from asyncio import get_event_loop, sleep
-socks4proxy = proxy.Socks4(listen_host='0.0.0.0', listen_port=1080)
+socks4proxy = socksproxy.Socks4(listen_host='0.0.0.0', listen_port=1080)
 socks4proxy.start(keep_serving=False)
 
 # run other functions, emulated by sleep
