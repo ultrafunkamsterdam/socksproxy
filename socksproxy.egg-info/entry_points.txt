@@ -1,3 +1,0 @@
-[console_scripts]
-socksproxy = socksproxy.__main__:main
-
