@@ -5,9 +5,16 @@ A flexible asynchronous socks4 / socks5 proxy written in pure python
 
 This proxy module can be used as a full blown proxy or the classes can be used to provide a interface to socks4 or/and socks5
 
-### usage:
+### usage (as a program):
 
+after installation through 
+```pip install git+https://github.com/ultrafunkamsterdam/socksproxy.git```
+the proxy can be started using the command
+```cmd
+socksproxy
+```
 
+### usage (as a python module)
 **default settings**
 ```python
 import socksproxy
