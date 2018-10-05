@@ -30,7 +30,7 @@ class Socks5:
 
 
     @classmethod
-    async def handle_client(cls, reader, writer, passed=False):
+    async def handle_client(cls, reader, writer, version=None):
         """
         Handles a client connection
         :param StreamReader reader: streamreader instance passed by the server
@@ -80,9 +80,11 @@ class Socks5:
             data = await reader.read(calcsize(fmt))
             return unpack(fmt, data)
 
+        if version:
+            num_methods = (await read(">B"))[0]
+        else:
+            version, num_methods = await read(">BB")
 
-        version = 5
-        num_methods = (await read(">B"))[0]
         methods = await read("!" + "B" * num_methods)
 
         # reply the server selected method "no auth required"

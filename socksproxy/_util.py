@@ -14,10 +14,10 @@ async def proxy_dispatcher(reader, writer):
     version = (await reader.read(1))[0]
     if 4 < version <= 5:
         print('request assigned to socks5 proxy')
-        await Socks5.handle_client(reader, writer)
+        await Socks5.handle_client(reader, writer, 5)
     elif 5 > version >= 4:
         print('request assigned to socks4 proxy')
-        await Socks4.handle_client(reader, writer)
+        await Socks4.handle_client(reader, writer, 4)
 
 
 def get_args():

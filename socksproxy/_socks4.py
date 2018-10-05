@@ -3,7 +3,6 @@ from asyncio import (gather, get_event_loop, open_connection, start_server)
 from ipaddress import ip_address
 from struct import calcsize, pack, unpack
 
-# __all__ = ['Socks4']
 
 
 class Socks4:
@@ -25,7 +24,7 @@ class Socks4:
 
 
     @classmethod
-    async def handle_client(cls, reader, writer, passed=False):
+    async def handle_client(cls, reader, writer, version=None):
         """
         Handles a client connection
         :param StreamReader reader: streamreader instance passed by the server
@@ -73,9 +72,10 @@ class Socks4:
             data = await reader.read(calcsize(fmt))
             return unpack(fmt, data)
 
-
-        version = 4
-        cmd, port = await read(">BH")
+        if version:
+            cmd, port = await read(">BH")
+        else:
+            version, cmd, port = await read(">BBH")
         host = await reader.read(4)
         host = socket.inet_ntoa(host)
         null = await reader.readuntil(b"\x00")
