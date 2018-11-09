@@ -4,12 +4,10 @@ from ipaddress import ip_address
 from struct import calcsize, pack, unpack
 
 
-
 class Socks4:
     """
     Socks4 proxy class
     """
-
 
     def __init__(self, listen_host="127.0.0.1", listen_port=1080):
         """
@@ -19,12 +17,15 @@ class Socks4:
         """
         self.listen_host = listen_host
         self.listen_port = listen_port
+        self.source_ip = source_ip
         self.id = id(self)
         self.server = None
+        self.source_ip = None
+        self.sock = None
 
 
     @classmethod
-    async def handle_client(cls, reader, writer, version=None):
+    async def handle_client(cls, reader, writer, version=None, source_ip=None):
         """
         Handles a client connection
         :param StreamReader reader: streamreader instance passed by the server
@@ -44,7 +45,7 @@ class Socks4:
                 data = await r.read(bufsize)
                 while data:
                     w.write(data)
-                    print("pipe {} = ".format("" if not name else " to " + name), data)
+                    log.warning(name + " traffic to {} : {}".format(*w.get_extra_info('peername')))
                     data = await r.read(bufsize)
             except Exception as e:
                 pass
@@ -80,15 +81,24 @@ class Socks4:
         host = socket.inet_ntoa(host)
         null = await reader.readuntil(b"\x00")
 
+
         if host.startswith("0.0.0"):
             hostname = (await reader.readuntil(b"\x00"))[:-1].decode()
             if hostname.endswith(".onion"):
-                print("this is a tor address : ", hostname)
+                log.warning("this is a tor address: {}".format(hostname))
                 writer.write_eof()
                 return
             host = socket.gethostbyname(hostname)
 
-        remote_reader, remote_writer = await open_connection(host=host, port=port)
+        params = {"host": host, "port": port}
+
+        if source_ip:
+            sock = socket.socket(2,1)
+            sock.bind((source_ip, 0))
+            sock.connect((host, port))
+            params = {"sock": sock}
+
+        remote_reader, remote_writer = await open_connection(**params)
         write_reply(90, dst_port=port, dst_host_ip=host)
         tasks = [
             pipe(reader, remote_writer, name="outgoing"),
@@ -106,6 +116,6 @@ class Socks4:
             start_server(self.handle_client, self.listen_host, self.listen_port)
         )
         for s in self.server.sockets:
-            print('socks4 server listening on {}:{}'.format(*s.getsockname()))
+            log.warning('socks4 server listening on {}:{}'.format(*s.getsockname()))
         if keep_serving:
             get_event_loop().run_forever()

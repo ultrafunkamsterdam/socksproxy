@@ -2,6 +2,7 @@ import socket
 from asyncio import (gather, get_event_loop, open_connection, start_server)
 from ipaddress import ip_address
 from struct import calcsize, pack, unpack
+from ._util import log
 
 # __all__ = ['Socks5']
 #
@@ -27,16 +28,18 @@ class Socks5:
         self.listen_port = listen_port
         self.id = id(self)
         self.server = None
+        self.source_ip = None
+        self.sock = None
 
 
     @classmethod
-    async def handle_client(cls, reader, writer, version=None):
+    async def handle_client(cls, reader, writer, version=None, source_ip=None):
         """
         Handles a client connection
         :param StreamReader reader: streamreader instance passed by the server
         :param StreamWriter writer: streamwriter instance passed by the server
         """
-
+ 
 
         async def pipe(r, w, bufsize=2048, name=None):
             """
@@ -50,7 +53,7 @@ class Socks5:
                 data = await r.read(bufsize)
                 while data:
                     w.write(data)
-                    print("pipe {} = ".format("" if not name else " to " + name), data)
+                    log.warning(name + " traffic to {} : {}".format(*w.get_extra_info('peername')))
                     data = await r.read(bufsize)
             except Exception as e:
                 pass
@@ -108,7 +111,7 @@ class Socks5:
             ip_addr = None
         else:
             write_reply(0x08)
-            print(
+            log.warning(
                 "Address type could not be determined from stream. "
                 "It should be either IPV4, IPV6 or DNS name. "
                 "Request discarded"
@@ -117,7 +120,7 @@ class Socks5:
 
         if hostname:
             if hostname.endswith(b".onion"):
-                print("this is a tor address : ", hostname)
+                log.warning("this is a tor address : ", hostname)
                 writer.write_eof()
                 return
             if not ip_addr:
@@ -125,7 +128,16 @@ class Socks5:
         else:
             hostname = socket.gethostbyaddr(ip_addr)
 
-        remote_reader, remote_writer = await open_connection(host=ip_addr, port=port)
+
+        params = {"host": ip_addr, "port": port }
+
+        if source_ip:
+            sock = socket.socket(2,1)
+            sock.bind((source_ip, 0))
+            sock.connect((ip_addr, port))
+            params = {"sock": sock}
+
+        remote_reader, remote_writer = await open_connection(**params)
         write_reply(0x00, port=port, host_ip=ip_addr, atyp=cls.ATYP_IPv4)
 
         tasks = [
@@ -144,6 +156,6 @@ class Socks5:
             start_server(self.handle_client, self.listen_host, self.listen_port)
         )
         for s in self.server.sockets:
-            print('Socks5 server listening on {}:{}'.format(*s.getsockname()))
+            log.warning('Socks5 server listening on {}:{}'.format(*s.getsockname()))
         if keep_serving:
             get_event_loop().run_forever()
